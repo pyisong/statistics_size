@@ -57,20 +57,28 @@ def get_file_size(file_path, bucket):
 
 def download_oss_log(year, month, day):
     bucket = get_bucket()
-    os.mkdir('oss_logs/oss_log' + year + month + day)
+    os.mkdir('oss_logs/oss_log_danews-data' + year + month + day)
+    os.mkdir('oss_logs/oss_log_donews-test1' + year + month + day)
+    os.mkdir('oss_logs/oss_log_wangleilog' + year + month + day)
     file_count = 0
+    file_path_list = [
+        "log/danews-data/niuer-donews-data" + year + "-" + month + "-" + day,
+        "log/donews-test1/logdonews-test1" + year + "-" + month + "-" + day,
+        "log/wangleilog/donewsdataoss" + year + "-" + month + "-" + day,
+        ]
     # 注意去除路径最前面的"/"
-    for i in range(24):
-        if i < 10:
-            i = "0" + str(i)
-        file_path = "log/danews-data/niuer-donews-data" + year + "-" + month + "-" + day + "-" + str(i) + "-00-00-0001"
-        obj = get_file(file_path, bucket)
-        file_name = file_path.split("/")[-1] + ".log"
-        if obj:
-            with open('oss_logs/oss_log' + year + month + day + '/' + file_name, "w") as f:
-                content = obj.read()
-                f.write(content)
-                file_count += 1
+    for file_path in file_path_list:
+        for i in range(24):
+            if i < 10:
+                i = "0" + str(i)
+            file_path_format = file_path + "-" + str(i) + "-00-00-0001"
+            obj = get_file(file_path_format, bucket)
+            file_name = file_path_format.split("/")[-1] + ".log"
+            if obj:
+                with open('oss_logs/' + 'oss_log_' + file_path.split('/')[1] + year + month + day + '/' + file_name, "w") as f:
+                    content = obj.read()
+                    f.write(content)
+                    file_count += 1
     return file_count
 
 
@@ -81,3 +89,4 @@ def test_():
 
 if __name__ == "__main__":
     test_()
+    download_oss_log("2017", "10", "16")

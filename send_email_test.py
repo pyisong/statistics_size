@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 import email
 import mimetypes
@@ -18,15 +17,14 @@ def send_email(year, month, day):
     # qbiayrpxpkbebhab
     sender = 'zhujianwei@donews.com'
     receivers = [
-        '421414186@qq.com',
         'zhujianwei@donews.com',
-        # 'wanshitao@donews.com',
-        # 'jijiazhen@donews.com',
-        # 'lichenguang@donews.com',
-        # 'chenkangjian@donews.com',
-        # 'zhanyanjun@donews.com',
-        # 'yangliu@donews.com',
-        # 'shuyong@donews.com',
+        'wanshitao@donews.com',
+        'jijiazhen@donews.com',
+        'lichenguang@donews.com',
+        'chenkangjian@donews.com',
+        'zhanyanjun@donews.com',
+        'yangliu@donews.com',
+        'shuyong@donews.com',
     ]  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
     # username = "421414186@qq.com"
     # password = "odbtbqrfpqrmbhbj"

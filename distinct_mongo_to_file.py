@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import gc
 from settings import get_mongo, MONGO_PARA_N
 
 
@@ -53,10 +54,17 @@ def distinct_mongo_to_file(year, month, day):
     for item in _id_dict:
         _id_media[_id_dict[item]] += 1
 
-    result = {"news_count": len(_id_dict),
+    length = len(_id_dict)
+
+    del url_dict, _id_dict
+    gc.collect()
+
+    result = {"news_count": length,
               "every_media_news_count": _id_media,
               "repetition_count": repetition_count,
               "distinct_lines_count": distinct_lines_count}
+    mongo_to_file.close()
+
     return result
 
 

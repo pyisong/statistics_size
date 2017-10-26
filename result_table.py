@@ -165,6 +165,9 @@ def result_table(year, month, day, _id_media):
         cursor.execute(insert_sql, temp_params)
         db.commit()
 
+    cursor.close()
+    db.close()
+
 
 def compare_table(year, month, day, count_dict, only_osslog_count):
     params = (count_dict["common_count"], count_dict["only_mongo_count"],
@@ -175,6 +178,10 @@ def compare_table(year, month, day, count_dict, only_osslog_count):
           .format("statistics_compare_table")
     cursor.execute(sql, params)
     db.commit()
+
+    cursor.close()
+    db.close()
+
 
 
 def percent_table(year, month, day):
@@ -233,22 +240,39 @@ def percent_table(year, month, day):
         cursor.execute(insert_sql, params)
         db.commit()
 
+    cursor.close()
+    db.close()
 
-def size_table(year, month, day, common_size, only_osslog_size):
+
+def size_table(year, month, day, common_size, only_osslog_size, danews_data_size, donews_test1_size, wangleilog_size):
     db = get_mysql_db()
     cursor = db.cursor()
-    insert_sql = 'insert into {}(common_size, only_osslog_size, datetime) values(%s, %s, %s)'\
+    insert_sql = 'insert into {}(common_size, only_osslog_size, datetime,' \
+                 ' danews_data_size, donews_test1_size, wangleilog_size) values(%s, %s, %s, %s, %s, %s)'\
         .format("statistics_size_table")
-    params = (common_size, only_osslog_size, year + '-' + month + '-' + day)
+    params = (common_size, only_osslog_size, year + '-' + month + '-' + day,
+              danews_data_size, donews_test1_size, wangleilog_size)
     cursor.execute(insert_sql, params)
     db.commit()
 
+    cursor.close()
+    db.close()
 
-def result_table_main(year, month, day, count_dict, only_osslog_count, _id_media, common_size, only_osslog_size):
+
+def result_table_main(year, month, day,
+                      count_dict, only_osslog_count,
+                      _id_media, common_size, only_osslog_size,
+                      danews_data_size, donews_test1_size, wangleilog_size):
+
     compare_table(year=year, month=month, day=day, count_dict=count_dict, only_osslog_count=only_osslog_count)
     result_table(year=year, month=month, day=day, _id_media=_id_media)
     percent_table(year=year, month=month, day=day)
-    size_table(year=year, month=month, day=day, common_size=common_size, only_osslog_size=only_osslog_size)
+    size_table(year=year, month=month, day=day,
+               common_size=common_size,
+               only_osslog_size=only_osslog_size,
+               danews_data_size=danews_data_size,
+               donews_test1_size=donews_test1_size,
+               wangleilog_size=wangleilog_size)
 
 if __name__ == '__main__':
     percent_table(year='2017', month='09', day='20')

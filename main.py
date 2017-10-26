@@ -10,8 +10,9 @@ from only_osslog import only_osslog, insert_mysql_only_osslog
 from result_table import result_table_main
 from delete_data import delete_main
 from mongo_compare_osslog import mongo_compare_osslog_main
+# from large_osslog_mongo_compare_osslog import large_mongo_compare_osslog_main
 from find_only_mongo import find_only_mongo
-from send_email import send_email, export
+from send_email_1 import send_email, export
 from settings import init_log
 from settings import MONGO_PARA_N
 
@@ -39,22 +40,22 @@ if __name__ == '__main__':
     init_log("logs/" + target_year + "-" + target_month + "-" + target_day + '.log')
 
     try:
-        delete_main(save_days=7)
+        delete_main(save_days=2)
         logging.warning("Delete program run done....")
     except Exception, e:
         logging.error("Error message: %s", e)
 
     logging.warning("Start statistics %s-%s-%s data....", target_year, target_month, target_day)
 
-    result, not_equal_dict =\
-        save_not_equal_data(paras=MONGO_PARA_N,
-                            start_time=start_time,
-                            end_time=end_time,
-                            month=target_month,
-                            day=target_day,
-                            year=target_year)
+    result = save_not_equal_data(paras=MONGO_PARA_N,
+                                 start_time=start_time,
+                                 end_time=end_time,
+                                 month=target_month,
+                                 day=target_day,
+                                 year=target_year)
+
     logging.warning("write_mongo_lines: %s, total_data_count: %s, path_none_count: %s,"
-                    " not_equal_count: %s, none_url_count: %s",
+                    "not_equal_count: %s, none_url_count: %s",
                     result["write_lines"], result["total_data_count"],
                     result["path_none_count"], result["not_equal_count"],
                     result["none_url_count"])
@@ -69,11 +70,29 @@ if __name__ == '__main__':
     log_count = download_oss_log(year=target_year, month=target_month, day=target_day)
     logging.warning("oss logs count: %s", log_count)
 
-    write_osslog_result = write_osslog_content(year=target_year, month=target_month, day=target_day)
-    logging.warning("write_osslog_lines: %s, osslog_size: %s",
-                    write_osslog_result["osslog_lines"], write_osslog_result["osslog_size"])
+    content_dict = write_osslog_content(year=target_year, month=target_month, day=target_day)
+    logging.warning("write danews-data_lines: %s, danews-data_size: %s, error_line: %s",
+                    content_dict["oss_log_danews-data_osslog_lines"],
+                    content_dict["oss_log_danews-data_osslog_size"],
+                    content_dict["error_line"])
 
-    count_dict = mongo_compare_osslog_main(year=target_year, month=target_month, day=target_day, read_size=50*1024)
+    logging.warning("write donews-test1_lines: %s, donews-test1_size: %s",
+                    content_dict["oss_log_donews-test1_osslog_lines"], content_dict["oss_log_donews-test1_osslog_size"])
+
+    logging.warning("write wangleilog_lines: %s, wangleilog_size: %s",
+                    content_dict["oss_log_wangleilog_osslog_lines"], content_dict["oss_log_wangleilog_osslog_size"])
+
+    # if content_dict["oss_log_danews-data_osslog_lines"] > 5000000:
+    #     count_dict = large_mongo_compare_osslog_main(year=target_year,
+    #                                                  month=target_month,
+    #                                                  day=target_day,
+    #                                                  read_size=1024*1024)
+    # else:
+    count_dict = mongo_compare_osslog_main(year=target_year,
+                                           month=target_month,
+                                           day=target_day,
+                                           read_size=1024*1024)
+
     logging.warning("common_count: %s, common_size: %s, only_mongo_count: %s only_mongo_size: %s, error_count: %s",
                     count_dict["common_count"],
                     count_dict["common_size"],
@@ -84,13 +103,16 @@ if __name__ == '__main__':
     only_osslog_count, only_osslog_size = only_osslog(year=target_year, month=target_month, day=target_day)
     logging.warning("only_osslog_count: %s, only_osslog_size: %s", only_osslog_count, only_osslog_size)
 
-    insert_mysql_only_osslog(year=target_year, month=target_month, day=target_day)
-    logging.warning("insert only osslog to mysql done! %s-%s-%s",  target_year, target_month, target_day)
+    # insert_mysql_only_osslog(year=target_year, month=target_month, day=target_day)
+    # logging.warning("insert only osslog to mysql done! %s-%s-%s",  target_year, target_month, target_day)
 
     result_table_main(year=target_year, month=target_month, day=target_day,
                       count_dict=count_dict, only_osslog_count=only_osslog_count,
                       _id_media=distinct_result["every_media_news_count"],
-                      common_size=count_dict["common_size"], only_osslog_size=only_osslog_size)
+                      common_size=count_dict["common_size"], only_osslog_size=only_osslog_size,
+                      danews_data_size=content_dict["oss_log_danews-data_osslog_size"],
+                      donews_test1_size=content_dict["oss_log_donews-test1_osslog_size"],
+                      wangleilog_size=content_dict["oss_log_wangleilog_osslog_size"])
 
     logging.warning("start send email...")
     export(year=target_year, month=target_month, day=target_day)

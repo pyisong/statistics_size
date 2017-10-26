@@ -49,7 +49,7 @@ def find_only_mongo(year, month, day):
                 not_found_count += count
 
             item.join()
-
+    f_only.close()
     return not_found_count
 
 

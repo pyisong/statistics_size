@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import gc
 from settings import get_mysql_db, get_mongo
 from bson import ObjectId
 
@@ -112,7 +113,11 @@ def save_not_equal_data(paras, start_time, end_time, year, month, day):
     with open("target_file/not_equal_data" + year + month + day + ".txt", 'w') as f:
         for k, v in not_equal_dict.items():
             f.write(k + '\t' + v + '\n')
-    return result, not_equal_dict
+
+    del not_equal_dict
+    gc.collect()
+
+    return result
 
 
 def insert_mysql(year, month, day):
@@ -135,6 +140,7 @@ def insert_mysql(year, month, day):
             lis = list()
     cursor.executemany(sql, lis)
     db.commit()
+    f.close()
 
 if __name__ == "__main__":
     pass

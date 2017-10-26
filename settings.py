@@ -83,5 +83,15 @@ def format_time(timestamp):
     return format_timestamp
 
 
+def save_to_mysql(params_list):
+    db = get_mysql_db()
+    cursor = db.cursor()
+    sql = "insert into {}(url, file_size) values (%s, %s)".format("statistics_osslog_url_size")
+    cursor.executemany(sql, params_list)
+    db.commit()
+
+    cursor.close()
+    db.close()
+
 if __name__ == "__main__":
     pass

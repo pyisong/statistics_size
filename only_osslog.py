@@ -1,4 +1,5 @@
 # -*- coding:utf-8 -*-
+import gc
 from settings import get_mysql_db, format_time
 
 
@@ -29,6 +30,12 @@ def only_osslog(year, month, day):
                 only_osslog_count += 1
                 only_osslog_size += file_size
                 f.write(url + '\t' + str(file_size) + '\t' + timestamp + '\n')
+    f_compare.close()
+    f_osslog.close()
+
+    del compare_dict
+    gc.collect()
+
     return only_osslog_count, only_osslog_size
 
 
@@ -56,6 +63,9 @@ def insert_mysql_only_osslog(year, month, day):
             lis = list()
     cursor.executemany(sql, lis)
     db.commit()
+    cursor.close()
+    db.close()
+    f.close()
 
 
 if __name__ == "__main__":

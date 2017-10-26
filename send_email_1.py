@@ -1,21 +1,17 @@
+#!/usr/bin/python
 # -*- coding: UTF-8 -*-
 import email
 import mimetypes
 import smtplib
 import os
-import xlsxwriter
-import decimal
+import xlwt
 from email.header import Header
 from settings import get_mysql_db
-
-# import sys
-# reload(sys)
-# sys.setdefaultencoding('utf-8')
 
 
 def send_email(year, month, day):
     # qbiayrpxpkbebhab
-    sender = 'zhujianwei@donews.com'
+    sender = '421414186@qq.com'
     receivers = [
         'zhujianwei@donews.com',
         'wanshitao@donews.com',
@@ -26,13 +22,10 @@ def send_email(year, month, day):
         'yangliu@donews.com',
         'shuyong@donews.com',
     ]  # 接收邮件，可设置为你的QQ邮箱或者其他邮箱
-    # username = "421414186@qq.com"
-    # password = "odbtbqrfpqrmbhbj"
+    username = "421414186@qq.com"
+    password = "odbtbqrfpqrmbhbj"
 
-    username = "zhujianwei@donews.com"
-    password = "4656BIsheng"
-
-    file_name = 'csv_file/statistics_result_table' + year + '-' + month + '-' + day + '.xlsx'
+    file_name = 'csv_file/statistics_result_table' + year + '-' + month + '-' + day + '.csv'
     # 构造MIMEMultipart对象做为根容器
     main_msg = email.MIMEMultipart.MIMEMultipart()
 
@@ -56,7 +49,7 @@ def send_email(year, month, day):
     main_msg['Subject'] = Header(subject, 'utf-8')
     main_msg['From'] = 'zhujianwei@donews.com'
     main_msg['To'] = ','.join(receivers)
-    smtp = smtplib.SMTP('smtp.exmail.qq.com', 25)
+    smtp = smtplib.SMTP_SSL('smtp.qq.com', 465)
     fullText = main_msg.as_string()
     smtp.login(username, password)
     smtp.sendmail(sender, receivers, fullText)
@@ -110,33 +103,35 @@ def export(year, month, day):
         from {} where datetime = %s;
     """.format("statistics_result_table")
 
-    workbook = xlsxwriter.Workbook('csv_file/statistics_result_table' + year + '-' + month + '-' + day + '.xlsx')
+    workbook = xlwt.Workbook()
     count = 1
     for sql in [sql1, sql2, sql3]:
         cursor.execute(sql, year + '-' + month + '-' + day)
+        # 重置游标的位置
+        # cursor.scroll(0,mode='absolute')
         # 搜取所有结果
         results = cursor.fetchall()
         # 获取MYSQL里面的数据字段名称
         fields = cursor.description
-        sheet = workbook.add_worksheet('table_' + table_name + str(count))
+        sheet = workbook.add_sheet('table_' + table_name + str(count), cell_overwrite_ok=True)
         count += 1
+
         # 写上字段信息
         for field in range(0,len(fields)):
             sheet.write(0, field, fields[field][0])
 
         # 获取并写入数据段信息
-        for row in range(1, len(results)+1):
-            for col in range(0, len(fields)):
-                value = results[row-1][col]
-                if str(value).find(".") != -1 or str(value) == '0':
-                    if str(value).find(",") != -1:
-                        value = decimal.Decimal(str(value).replace(",", ''))
-                    value = decimal.Decimal(value)
+        row = 1
+        col = 0
+        for row in range(1,len(results)+1):
+            for col in range(0,len(fields)):
+                value = u'%s' % results[row-1][col]
                 sheet.write(row, col, value)
-    workbook.close()
+
+        workbook.save('csv_file/statistics_result_table' + year + '-' + month + '-' + day + '.csv')
 
 
 # 结果测试
 if __name__ == "__main__":
-    export(year='2017', month='10', day='08')
-    send_email(year='2017', month='10', day='08')
+    export(year='2017', month='10', day='09')
+    send_email(year='2017', month='10', day='09')

@@ -1,15 +1,16 @@
 # -*- coding:utf-8 -*-
 
 import logging
-import gc
-
 from settings import get_mysql_db
-from settings import MyThread
+from settings import MyThread, save_to_mysql
 from download_oss_log import get_bucket, get_file_size
 
 
-def mongo_to_log(content_mongo, log_dict, bucket, f):
+def mongo_to_log(content_mongo, bucket, f):
     error_count = 0
+    db = get_mysql_db()
+    cursor = db.cursor()
+    sql = "select file_size from statistics_osslog_url_size where url=%s"
     for line_mongo in content_mongo:
         mongo_list = line_mongo.split()
         _id = mongo_list[0]
@@ -18,9 +19,11 @@ def mongo_to_log(content_mongo, log_dict, bucket, f):
         url = mongo_list[3]
         flag = 0
         file_size = 0
-        if url in log_dict:
+        cursor.execute(sql, url)
+        result = cursor.fetchone()
+        if len(result) > 0:
             flag = 1
-            file_size = log_dict[url]
+            file_size = result[0]
         if flag == 0:
             file_size = get_file_size(file_path=url.lstrip('/'), bucket=bucket)
             if not file_size:
@@ -33,7 +36,6 @@ def mongo_to_log(content_mongo, log_dict, bucket, f):
 
 
 def compare_file(year, month, day, read_size):
-    log_dict = {}
     count_dict = {
         "common_count": 0,
         "common_size": 0,
@@ -45,21 +47,26 @@ def compare_file(year, month, day, read_size):
     f_mongo = open("target_file/distinct_mongo_to_file" + year + month + day + ".txt", "r")
     f_osslog = open("target_file/osslog_to_file" + year + month + day + ".txt", "r")
     content_osslog = f_osslog.readlines()
+    params_list = []
     for line_osslog in content_osslog:
         log_list = line_osslog.split()
         log_url = log_list[0]
         file_size = log_list[1]
         if file_size.isdigit():
             file_size = int(file_size)
-            log_dict[log_url] = file_size
+            params_list.append((log_url, file_size))
+            if len(params_list) >= 5000:
+                save_to_mysql(params_list)
+                params_list = []
         else:
             logging.error("error line: %s, %s", log_url, file_size)
+    save_to_mysql(params_list)
 
     with open("target_file/mongo_compare_osslog" + year + month + day + ".txt", "w+") as f:
         content_mongo = f_mongo.readlines(read_size)
         thread_list = []
         while len(content_mongo) > 0:
-            t = MyThread(func=mongo_to_log, args=(content_mongo, log_dict, bucket, f))
+            t = MyThread(func=mongo_to_log, args=(content_mongo, bucket, f))
             thread_list.append(t)
             content_mongo = f_mongo.readlines(read_size)
 
@@ -71,11 +78,16 @@ def compare_file(year, month, day, read_size):
                 count_dict["error_count"] += error_count
             item.join()
 
-    del log_dict
-    gc.collect()
-
     f_mongo.close()
     f_osslog.close()
+
+    # db = get_mysql_db()
+    # cursor = db.cursor()
+    # sql = "truncate table statistics_osslog_url_size"
+    # cursor.execute(sql)
+    # db.commit()
+    # cursor.close()
+    # db.close()
 
     f_compare = open("target_file/mongo_compare_osslog" + year + month + day + ".txt", "r")
     contents = f_compare.readlines()
@@ -124,17 +136,15 @@ def insert_mysql(year, month, day):
             lis = list()
     cursor.executemany(sql, lis)
     db.commit()
-
     cursor.close()
     db.close()
-
     f.close()
 
 
-def mongo_compare_osslog_main(year, month, day, read_size):
+def large_mongo_compare_osslog_main(year, month, day, read_size):
     count_dict = compare_file(year=year, month=month, day=day, read_size=read_size)
     insert_mysql(year=year, month=month, day=day)
     return count_dict
 
 if __name__ == "__main__":
-    compare_file(year='2017', month='09', day='20', read_size=50*1024)
+    compare_file(year='2017', month='10', day='22', read_size=1024*1024)
